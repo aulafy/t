@@ -50,6 +50,9 @@ class PostgresD1 {
 
   constructor(url: string) {
     this.sql = postgres(url, {
+      // Supabase's transaction pooler requires TLS. Setting this explicitly
+      // also avoids Node rejecting the managed pooler's certificate chain.
+      ssl: 'require',
       max: 3,
       idle_timeout: 20,
       connect_timeout: 10,
