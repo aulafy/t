@@ -11,7 +11,7 @@ El repositorio contiene el MVP funcional de ExtraClaro y está preparado para re
 
 ## Vercel + Supabase
 
-Para usar Vercel y Supabase hay que adaptar el adaptador de persistencia de `lib/service.ts` y las rutas de servidor al runtime de Vercel, y crear las tablas equivalentes en PostgreSQL de Supabase. No se deben reutilizar credenciales de D1 ni inventar variables de entorno.
+Se han añadido `vercel.json`, `.env.example` y `supabase/schema.sql`. Para usar Vercel y Supabase todavía hay que adaptar la persistencia de `lib/service.ts` y las rutas de servidor al runtime de Vercel: el servicio actual depende de `D1Database`, `prepare()`, `batch()` y transacciones condicionales. El esquema PostgreSQL no sustituye ese adaptador.
 
 Variables mínimas esperadas para esa adaptación:
 
