@@ -9,6 +9,11 @@ import {
   Download,
   Building2,
   Link as LinkIcon,
+  Menu,
+  X,
+  LayoutDashboard,
+  BriefcaseBusiness,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +80,7 @@ export default function Workspace({ userName }: { userName: string }) {
       budget: '',
     });
   const [editLock, setEditLock] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [form, setForm] = useState(blank),
     [reviewed, setReviewed] = useState(false),
     [share, setShare] = useState('');
@@ -267,6 +273,40 @@ export default function Workspace({ userName }: { userName: string }) {
           extra<span>claro</span>
           <b>+</b>
         </a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X /> : <Menu />}
+        </button>
+        <nav
+          id="primary-navigation"
+          className={'main-nav ' + (menuOpen ? 'is-open' : '')}
+          aria-label="Navegación principal"
+        >
+          <a href="#resumen" onClick={() => setMenuOpen(false)}>
+            <LayoutDashboard size={17} /> Resumen
+          </a>
+          <a href="#obras" onClick={() => setMenuOpen(false)}>
+            <BriefcaseBusiness size={17} /> Obras
+          </a>
+          <a href="#actividad" onClick={() => setMenuOpen(false)}>
+            <Activity size={17} /> Actividad
+          </a>
+          <Button
+            size="sm"
+            onClick={() => {
+              setNewProject(true);
+              setMenuOpen(false);
+            }}
+          >
+            <Plus /> Nueva obra
+          </Button>
+        </nav>
         <span className="pilot">
           {userName}
           <br />
@@ -275,7 +315,7 @@ export default function Workspace({ userName }: { userName: string }) {
           </a>
         </span>
       </header>
-      <div className="page-heading">
+      <div className="page-heading" id="resumen">
         <div>
           <p className="eyebrow">CONTROL DE OBRA</p>
           <h1>Cada extra, claro.</h1>
@@ -321,7 +361,7 @@ export default function Workspace({ userName }: { userName: string }) {
         </section>
       ) : (
         <>
-          <div className="project-strip">
+          <div className="project-strip" id="obras">
             <label className="project-picker">
               Obra activa
               <Select
@@ -375,7 +415,7 @@ export default function Workspace({ userName }: { userName: string }) {
             </div>
           </div>
           <div className="workgrid">
-            <section className="panel change-list">
+            <section className="panel change-list" id="actividad">
               <div className="section-title justify-between">
                 <h2>
                   Extras de esta obra{' '}
