@@ -371,7 +371,7 @@ export default function Workspace({ userName }: { userName: string }) {
               <strong>
                 {formatEuro((project?.budget_cents || 0) + approved)}
               </strong>
-              <small>Original + extras aprobados</small>
+                <small>Original + extras aprobados · IVA incluido</small>
             </div>
           </div>
           <div className="workgrid">
