@@ -428,3 +428,110 @@ test('fallo de UPDATE no crea eventos de edición ni incrementa versión', async
     0,
   );
 });
+
+const serviceUrl =
+  'data:text/javascript;base64,' + Buffer.from(compiled).toString('base64');
+async function importServerModule(filename) {
+  const raw = readFileSync(
+    new URL('../lib/' + filename, import.meta.url),
+    'utf8',
+  )
+    .replace(
+      "import {getRawDb} from '@/db';",
+      'const getRawDb=()=>globalThis.__extraclaroTestDb;',
+    )
+    .replace(
+      "import { getRawDb } from '@/db';",
+      'const getRawDb=()=>globalThis.__extraclaroTestDb;',
+    )
+    .replace("'./service'", JSON.stringify(serviceUrl));
+  const output = ts.transpileModule(raw, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  return import(
+    'data:text/javascript;base64,' + Buffer.from(output).toString('base64')
+  );
+}
+const rate = await importServerModule('rate-limit.ts'),
+  http = await importServerModule('http.ts');
+
+test('presupuesto de solicitudes es atómico ante peticiones concurrentes', async () => {
+  const results = await Promise.allSettled(
+    Array.from({ length: 20 }, () =>
+      rate.consumeBudget('test-subject', 5, 60010),
+    ),
+  );
+  assert.equal(results.filter((r) => r.status === 'fulfilled').length, 5);
+  for (const r of results.filter((r) => r.status === 'rejected'))
+    assert.equal(r.reason.status, 429);
+  assert.equal(
+    sqlite.prepare('SELECT used FROM request_windows').get().used,
+    5,
+  );
+});
+test('ventana nueva recupera presupuesto y elimina contadores caducados', async () => {
+  await rate.consumeBudget('a', 1, 60010);
+  await assert.rejects(
+    () => rate.consumeBudget('a', 1, 60011),
+    (e) => e.status === 429,
+  );
+  await rate.consumeBudget('a', 1, 120001);
+  assert.equal(
+    sqlite.prepare('SELECT COUNT(*) AS n FROM request_windows').get().n,
+    1,
+  );
+  assert.equal(
+    sqlite.prepare('SELECT expires_at FROM request_windows').get().expires_at,
+    180000,
+  );
+});
+test('cuotas separadas y claves sin datos en claro', async () => {
+  await rate.consumeBudget('owner:private@example.invalid', 1, 60010);
+  await rate.consumeBudget('owner:other@example.invalid', 1, 60010);
+  const rows = sqlite.prepare('SELECT id FROM request_windows').all();
+  assert.equal(rows.length, 2);
+  for (const r of rows) assert.match(r.id, /^[a-f0-9]{64}$/);
+});
+test('429 devuelve espera en cabecera sin trazas', async () => {
+  await rate.consumeBudget('limit', 1, 60010);
+  let err;
+  try {
+    await rate.consumeBudget('limit', 1, 60011);
+  } catch (e) {
+    err = e;
+  }
+  const response = http.failure(err);
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('Retry-After'), '60');
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+});
+test('lectura HTTP valida origen, JSON y límite de bytes', async () => {
+  const request = (value, origin = 'https://example.invalid') =>
+    new Request('https://example.invalid/api/workspace', {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'application/json' },
+      body: value,
+    });
+  assert.deepEqual(await http.body(request('{"action":"test"}')), {
+    action: 'test',
+  });
+  await assert.rejects(
+    () => http.body(request('{}', 'https://other.invalid')),
+    (e) => e.status === 403,
+  );
+  await assert.rejects(
+    () => http.body(request('[]')),
+    (e) => e.status === 400,
+  );
+  await assert.rejects(
+    () => http.body(request('{bad')),
+    (e) => e.status === 400,
+  );
+  await assert.rejects(
+    () => http.body(request(JSON.stringify({ text: 'é'.repeat(6000) }))),
+    (e) => e.status === 413,
+  );
+});

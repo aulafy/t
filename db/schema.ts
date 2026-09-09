@@ -73,3 +73,13 @@ export const events = sqliteTable(
     uniqueIndex('events_operation').on(t.operationId),
   ],
 );
+
+export const requestWindows = sqliteTable(
+  'request_windows',
+  {
+    id: text('id').primaryKey(),
+    used: integer('used').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+  },
+  (t) => [index('request_windows_expiry').on(t.expiresAt)],
+);

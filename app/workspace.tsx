@@ -74,6 +74,7 @@ export default function Workspace({ userName }: { userName: string }) {
       client: '',
       budget: '',
     });
+  const [editLock, setEditLock] = useState(0);
   const [form, setForm] = useState(blank),
     [reviewed, setReviewed] = useState(false),
     [share, setShare] = useState('');
@@ -96,6 +97,7 @@ export default function Workspace({ userName }: { userName: string }) {
   const pending = changes.filter((c) => c.status === 'sent');
   const selectChange = (c?: Row) => {
     setChangeId(c?.id || '');
+    setEditLock(c?.lock_version ?? 0);
     setShare('');
     setReviewed(false);
     setForm(
@@ -116,7 +118,13 @@ export default function Workspace({ userName }: { userName: string }) {
     setNotice('');
     try {
       const result = await request('/api/workspace', action);
-      await load();
+      try {
+        await load();
+      } catch {
+        setError(
+          'La operación se ha guardado, pero no se pudo actualizar la vista. Pulsa Reintentar para cargarla.',
+        );
+      }
       return result;
     } catch (e) {
       setError((e as Error).message);
@@ -132,10 +140,11 @@ export default function Workspace({ userName }: { userName: string }) {
       action: selected ? 'edit' : 'createChange',
       projectId,
       id: changeId,
-      lockVersion: selected?.lock_version,
+      lockVersion: editLock,
     });
     if (r) {
       setChangeId(r.id);
+      setEditLock(selected ? editLock + 1 : 0);
       setReviewed(false);
       setNotice(
         'Borrador guardado. Revisa los datos antes de crear el enlace.',
@@ -146,7 +155,7 @@ export default function Workspace({ userName }: { userName: string }) {
     const r = await perform({
       action: 'send',
       id: changeId,
-      lockVersion: selected?.lock_version,
+      lockVersion: editLock,
       reviewed,
     });
     if (r) {
@@ -167,6 +176,7 @@ export default function Workspace({ userName }: { userName: string }) {
       setShare('');
       if (action === 'revise') {
         setChangeId(r.id);
+        setEditLock(0);
         setReviewed(false);
       }
       setNotice(

@@ -10,7 +10,12 @@ export function json(value: unknown, status = 200) {
   });
 }
 export function failure(e: unknown) {
-  if (e instanceof AppError) return json({ error: e.message }, e.status);
+  if (e instanceof AppError) {
+    const response = json({ error: e.message }, e.status);
+    if ('retryAfter' in e)
+      response.headers.set('Retry-After', String(e.retryAfter));
+    return response;
+  }
   console.error('request_failed', e instanceof Error ? e.name : 'unknown');
   return json(
     { error: 'No se pudo completar la operación. Vuelve a intentarlo.' },
