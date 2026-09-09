@@ -1,30 +1,31 @@
-# ExtraClaro · Aplicación web
+# ExtraClaro
 
-MVP privado para registrar extras de reforma, congelar una versión, compartir una revisión, aprobar/rechazar y registrar ejecución/cobro manual. No está abierto a clientes externos.
+Aplicación web para acordar trabajos extra en reformas.
 
-## Desarrollo
+Prueba privada: https://extraclaro.rmn1978.chatgpt.site Arquitectura en [ARQUITECTURA.md](ARQUITECTURA.md) y código en web/.
 
-Requiere Node.js 22.13 o posterior y npm. Instalar con `npm install` y arrancar con `npm run dev -- --host 127.0.0.1`. El starter ofrece inicio de sesión local en `/signin-with-chatgpt?return_to=/`, solo desde localhost.
+## Implementado
 
-En una base local nueva, aplicar el SQL generado con `npx wrangler d1 execute DB --local --config wrangler.local.json --persist-to .wrangler/state --file drizzle/0000_*.sql`. Este comando inicial se ejecuta una sola vez; no repetir sobre una base con tablas. Producción aplica y registra las migraciones mediante Sites; nunca se inicializa el esquema desde las rutas HTTP.
+Obras persistentes, borradores editables, versiones congeladas, enlaces de revisión, aprobación/rechazo, anulación, nueva versión, ejecución y cobro completo manual. Historial exportable a JSON y revisión imprimible para guardar como PDF desde el navegador.
 
-## Verificación
+El prototipo de Sites se publica inicialmente solo para su propietario. El flujo de cliente por token está implementado, pero el acceso de terceros permanece cerrado. No es todavía un servicio comercial abierto.
 
-- `npm test`: pruebas del servicio real y sus consultas contra SQLite aislado. El adaptador serializa lotes como D1.
-- `npm run typecheck`: TypeScript.
-- `npm run build`: Worker y aplicación de producción.
-- El flujo HTTP local también se ha probado con autenticación de desarrollo, creación, envío, revisión anónima por token, aprobación, reintento, ejecución y cobro.
+## Comprobaciones
 
-No se ha realizado prueba visual en navegador. La herramienta WebMCP de lectura usa detección de soporte y no ha sido verificada en un contexto compatible.
+- 9 pruebas de dominio e importes: `npm test` en esta carpeta.
+- 14 pruebas del servicio, incluyendo concurrencia, idempotencia y aislamiento: `npm test` en web/.
+- TypeScript y compilación del Worker correctos.
+- Recorrido HTTP completo contra D1 local comprobado.
+- Sin pruebas visuales de navegador. WebMCP de lectura incluido, sin validación en contexto compatible.
 
-## Límites actuales
+Las instrucciones de arranque están en web/README.md.
 
-- En Sites el acceso inicial es solo del propietario. Los enlaces de clientes tienen un flujo anónimo implementado, pero la política privada del sitio impide compartirlos con terceros por ahora.
-- Un usuario equivale a un espacio de empresa. No hay invitaciones de equipo.
-- El enlace solo se muestra al generarlo. Se almacena su hash; para reemplazar uno perdido se crea otra versión.
-- Exportación JSON del historial e impresión/guardar PDF desde la revisión. No hay adjuntos ni PDF generado por el servidor.
-- No hay facturación, conexión bancaria, pagos parciales ni mensajes enviados automáticamente.
-- El registro de nombre es identidad declarada; no se presenta como firma cualificada.
-- Pendientes antes del piloto público: límites de frecuencia, política de retención, evaluación de privacidad, respaldo/restauración de producción y elección de autenticación comercial.
+## Trabajo con modelos
 
-Los secretos no se guardan en el repositorio. `.openai/hosting.json` contiene únicamente el proyecto y bindings lógicos.
+Rapid-MLX se utilizó para generar módulos pequeños. Sus propuestas necesitaron correcciones de aritmética y validación; se integró solo código revisado y probado. Grok CLI aportó revisión de producto y de concurrencia. Una revisión adicional de código se interrumpió tras más de siete minutos sin respuesta; no se usa como evidencia de validación.
+
+Prompts y revisiones en docs/. Las referencias de X siguen pendientes de comprobación independiente. Los modelos de desarrollo no reciben datos de clientes y la aplicación no necesita IA para funcionar.
+
+## Pendiente antes de un piloto comercial
+
+Acceso de clientes externos, membresías de empresa, límites de frecuencia, revisión de privacidad/retención y respaldo/restauración. Adjuntos y PDF generado en servidor están pendientes. La validación de demanda requiere empresas reales y no se sustituye con pruebas técnicas.

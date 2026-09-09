@@ -191,7 +191,10 @@ export default function Review({ token }: { token: string }) {
                       type="submit"
                       disabled={busy || !confirmed || !name.trim()}
                     >
-                      Aprobar {formatEuro(data.totalCents)}
+                      Confirmar aprobación · total obra{' '}
+                      {formatEuro(
+                        data.budgetCents + data.previousCents + data.totalCents,
+                      )}
                     </Button>
                     <Button
                       type="button"
