@@ -11,11 +11,10 @@ El repositorio contiene el MVP funcional de ExtraClaro y está preparado para re
 
 ## Vercel + Supabase
 
-Se han añadido `vercel.json`, `.env.example` y `supabase/schema.sql`. Para usar Vercel y Supabase todavía hay que adaptar la persistencia de `lib/service.ts` y las rutas de servidor al runtime de Vercel: el servicio actual depende de `D1Database`, `prepare()`, `batch()` y transacciones condicionales. El esquema PostgreSQL no sustituye ese adaptador.
+El build de Vercel usa Nitro y reemplaza el binding D1 por el adaptador PostgreSQL de `db/postgres-d1.ts`.
 
-Variables mínimas esperadas para esa adaptación:
-
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (solo servidor)
-
-El Site de Sites y D1 siguen siendo la referencia funcional validada; Vercel/Supabase deben probarse con la misma suite antes de sustituirlos.
+1. Ejecuta `supabase/schema.sql` en el editor SQL de Supabase.
+2. Añade `SUPABASE_DB_URL` en Vercel con la URL del *transaction pooler* de Supabase.
+3. Añade `EXTRACLARO_OWNER_ID` y `EXTRACLARO_OWNER_EMAIL` en Vercel.
+4. Activa Vercel Deployment Protection o coloca autenticación delante de la app: todo visitante admitido usa la identidad del propietario configurado.
+5. Vuelve a desplegar el último commit. Vercel lee el comando y la salida desde `vercel.json`.
