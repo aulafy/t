@@ -20,7 +20,7 @@ export async function consumeBudget(
     .run();
   const accepted = await db
     .prepare(
-      'INSERT INTO request_windows (id,used,expires_at) VALUES (?,1,?) ON CONFLICT(id) DO UPDATE SET used=used+1 WHERE used<? RETURNING used',
+      'INSERT INTO request_windows (id,used,expires_at) VALUES (?,1,?) ON CONFLICT(id) DO UPDATE SET used=request_windows.used+1 WHERE request_windows.used<? RETURNING request_windows.used AS used',
     )
     .bind(id, expires, limit)
     .first();
