@@ -16,7 +16,10 @@ export function failure(e: unknown) {
       response.headers.set('Retry-After', String(e.retryAfter));
     return response;
   }
-  console.error('request_failed', e instanceof Error ? e.name : 'unknown');
+  console.error(
+    'request_failed',
+    e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+  );
   return json(
     { error: 'No se pudo completar la operación. Vuelve a intentarlo.' },
     500,
